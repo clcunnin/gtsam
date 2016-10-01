@@ -2,10 +2,16 @@
 install(FILES CCOLAMD/Include/ccolamd.h DESTINATION include/gtsam/3rdparty/CCOLAMD)
 install(FILES UFconfig/UFconfig.h DESTINATION include/gtsam/3rdparty/UFconfig)
 
+
+message(STATUS "HERE!!!!!!!!!!!!!!!!11") 
+
+
 if(NOT GTSAM_USE_SYSTEM_EIGEN)
 	# Find plain .h files
+    message(STATUS "NOT USING SYSTEM!!!!!!!!!!!!!!!!11") 
 	file(GLOB_RECURSE eigen_headers "${CMAKE_CURRENT_SOURCE_DIR}/Eigen/Eigen/*.h")
 
+    #message(STATUS ${eigen_headers}) 
 	# Find header files without extension
 	file(GLOB eigen_dir_headers_all "Eigen/Eigen/*")
 	foreach(eigen_dir ${eigen_dir_headers_all})
@@ -65,12 +71,22 @@ if(GEOGRAPHICLIB_FOUND AND GTSAM_INSTALL_GEOGRAPHICLIB)
   message(WARNING "GeographicLib is installed on your system and GTSAM_INSTALL_GEOGRAPHICLIB is enabled.  Installing gtsam will either overwrite the installed GeographicLib or install a second version that may conflict.  You may want to disable GTSAM_INSTALL_GEOGRAPHICLIB if the installed version was not installed by GTSAM.")
 endif()
 
+set(SOPHUS_INCLUDE_DIR "/home/clcunnin/catkin_ws/src/lsd_slam_core/thirdparty/Sophus")
+
+SET(EIGEN3_INCLUDE_DIR "/home/clcunnin/git/gtsam_sim3/gtsam/3rdparty/Eigen/")
+
+SET (INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR} ${SOPHUS_INCLUDE_DIR})
+INCLUDE_DIRECTORIES( ${INCLUDE_DIRS} )
+
+
+
 if(GTSAM_INSTALL_GEOGRAPHICLIB)
   add_subdirectory(GeographicLib)
 endif()
 #btak
-add_subdirectory(Sophus)
-file(GLOB_RECURSE sophus_src "${CMAKE_CURRENT_SOURCE_DIR}/Sophus/sophus/*.cpp")
-install(DIRECTORY Sophus/sophus
-		DESTINATION include/gtsam/3rdparty/Sophus
-		FILES_MATCHING PATTERN "*.h")
+
+#add_subdirectory(Sophus)
+#file(GLOB_RECURSE sophus_src "${CMAKE_CURRENT_SOURCE_DIR}/Sophus/sophus/*.cpp")
+#install(DIRECTORY Sophus/sophus
+#DESTINATION include/gtsam/3rdparty/Sophus
+#FILES_MATCHING PATTERN "*.h")

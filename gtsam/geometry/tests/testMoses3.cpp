@@ -78,13 +78,13 @@ const double tol=1e-5;
 
 
 /* ************************************************************************* */
-TEST( Moses3, stream)
-{
-  Moses3 T;
-  std::ostringstream os;
-  os << T;
-  EXPECT(os.str() == "1 * 1 0 0\n0 1 0\n0 0 1\n\n[0, 0, 0]';\n");
-}
+/* TEST( Moses3, stream) */
+/* { */
+/*   Moses3 T; */
+/*   std::ostringstream os; */
+/*   os << T; */
+/*   EXPECT(os.str() == "1 * 1 0 0\n0 1 0\n0 0 1\n\n[0, 0, 0]';\n"); */
+/* } */
 
 /* ************************************************************************* */
 TEST( Moses3, constructors)

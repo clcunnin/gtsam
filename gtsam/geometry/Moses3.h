@@ -25,7 +25,15 @@
 #include <gtsam/base/DerivedValue.h>
 #include <gtsam/geometry/Point3.h>
 #include <gtsam/geometry/Rot3.h>
-#include <gtsam/3rdparty/Sophus/sophus/sim3.h> 
+#include <sophus/sim3.hpp> 
+#include <sophus/se3.hpp> 
+
+
+typedef Sophus::SE3d SE3;
+typedef Sophus::Sim3d Sim3;
+typedef Sophus::SO3d SO3;
+#define toSophus(x) ((x).cast<double>())
+#define sophusType double
 
 using namespace Sophus;
 
