@@ -114,7 +114,7 @@ public:
 
     if (H) {
 	    H->resize(3, 7);
-	    H->block < 3, 3 > (0, 0) << q.Sim3::rotation_matrix();  //deriv. trans NOT TESTED
+	    H->block < 3, 3 > (0, 0) << q.Sim3::rotationMatrix();  //deriv. trans NOT TESTED
 	    H->block < 3, 3 > (0, 3) << zeros(3,3);				//deriv. rot NOT TESTED
 	    H->block < 3, 1 > (0, 6) << zeros(3, 1);	//6 not 4      		//deriv scale NOT TESTED
 

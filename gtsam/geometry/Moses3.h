@@ -32,6 +32,8 @@
 typedef Sophus::SE3d SE3;
 typedef Sophus::Sim3d Sim3;
 typedef Sophus::SO3d SO3;
+typedef Sophus::RxSO3d RxSO3;
+
 #define toSophus(x) ((x).cast<double>())
 #define sophusType double
 
@@ -56,20 +58,6 @@ public:
   typedef Rot3 Rotation;
   typedef Point3 Translation;
 
-private:
-
-  Rot3 R_;   ///< Rotation gRp, between global and pose frame
-  Point3 t_; ///< Translation gTp, from global origin to pose frame origin
-  //double s_; /// scale
-  
-  //ScSO3 scso3_;
-  //Vector3d translation_;
-  //ScSO3 scso3_;  //inherited from Sim3
-  //Vector3d translation_; //inherited from Sim3
-  int ppp;
-
-public:
-
   /// @name Standard Constructors
   /// @{
 
@@ -81,21 +69,21 @@ public:
    *  Calls Sim3 base class constructor.
    */
   Moses3(const Sim3& pose) : 
-  		Sim3(pose.scso3(), pose.Sim3::translation()){
+  		Sim3(pose){
   }
 
 
   /** Copy constructor from ScSO3 and Vector3 
    *  Calls Sim3 base class constructor.
    */
-  Moses3(const ScSO3& pose, const Vector3& trans) : 
+  Moses3(const RxSO3& pose, const Vector3& trans) : 
   		Sim3(pose, trans){
   }
 
   /** Copy constructor from ScSO3 and Vector3 
    *  Calls Sim3 base class constructor.
    */
-  Moses3(const ScSO3& pose, const Point3& trans) : 
+  Moses3(const RxSO3& pose, const Point3& trans) : 
   		Sim3(pose, trans.vector()){
   }
 
@@ -104,28 +92,24 @@ public:
    *  Calls Sim3 base class constructor.
    */
   Moses3(const Moses3& pose) : 
-  		Sim3(pose.scso3(), pose.Sim3::translation()){
+  		Sim3(pose.rxso3(), pose.Sim3::translation()){
   }
 
   /** Construct from R,t */
   Moses3(const Rot3& R, const Point3& t) :
-      Sim3(ScSO3(R.matrix()),t.vector()) {
+      Sim3(RxSO3(R.matrix()),t.vector()) {
   }
 
-  /** Construct from s, R,t */
-  Moses3(double s, const Rot3& R, const Point3& t) :
-       Sim3(s, R.matrix(), t.vector()){
-  }
 
 
   /** Construct from Pose2 */
   explicit Moses3(const Pose2& pose2);
 
   /** Constructor from 4*4 matrix 
-	* 1st 3 x 3 block is s*R (scso3), 3rd colm is t, last element 4x4 is 1
+	* 1st 3 x 3 block is s*R (rxso3), 3rd colm is t, last element 4x4 is 1
   	*/
   Moses3(const Matrix &T) :
-    	Sim3( ScSO3(T.block(0,0,3,3)), T.col(3).head(3)){
+    	Sim3( RxSO3(T.block(0,0,3,3)), T.col(3).head(3)){
   }
 
   /// @}
@@ -147,11 +131,12 @@ public:
     return Moses3();
   }
 
-  Pose3 to_Pose3() const{
-  	SE3 ans(this->Sim3::to_SE3());
-  	Pose3 pose(Rot3(ans.rotation_matrix()), Point3(ans.translation()));
-  	return pose;
-  }
+  // CHECK REMOVE
+  /* Pose3 to_Pose3() const{ */
+  /* 	SE3 ans(this->Sim3::to_SE3()); */
+  /* 	Pose3 pose(Rot3(ans.rotation_matrix()), Point3(ans.translation())); */
+  /* 	return pose; */
+  /* } */
 
   /// inverse transformation with derivatives
   // TODO: Test
@@ -357,20 +342,23 @@ public:
      */
     Point3 transform_to(const Point3& p,
         boost::optional<Matrix&> Dpose=boost::none, boost::optional<Matrix&> Dpoint=boost::none) const;
-
     /// @}
     /// @name Standard Interface
     /// @{
+    //
 
     /// get rotation
-    const Rot3& rotation() const { 
-    	Rot3 rot(this->rotation_matrix());
-    	return rot; 
+    const Rot3 rotation() const { 
+
+        const Matrix3 & Rself = this->rotationMatrix();  
+	    Rot3 Rr(Rself);
+
+    	return Rr; 
     }
 
     /// get translation
     
-    const Point3& translation() const { 
+    const Point3 translation() const { 
     	Point3 trans(this->Sim3::translation());
     	return trans; 
     }    

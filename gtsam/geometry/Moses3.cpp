@@ -14,9 +14,6 @@
  * @brief 3D Pose
  */
 
-//#include <gtsam/3rdparty/Sophus/sophus/sim3.cpp> 
-//#include <gtsam/3rdparty/Sophus/sophus/so3.cpp> 
-//#include <gtsam/3rdparty/Sophus/sophus/scso3.cpp> 
 
 #include <gtsam/geometry/Moses3.h>
 #include <gtsam/geometry/Pose2.h>
@@ -45,7 +42,7 @@ static const Matrix7 I7 = eye(7);
 
 /* ************************************************************************* */
 Moses3::Moses3(const Pose2& pose2) :
-    Sim3(ScSO3(Rot3::rodriguez(0, 0, pose2.theta()).matrix()), (
+    Sim3(RxSO3(Rot3::rodriguez(0, 0, pose2.theta()).matrix()), (
         Point3(pose2.x(), pose2.y(), 0)).vector()) {
 }
 
@@ -54,14 +51,6 @@ Moses3::Moses3(const Pose2& pose2) :
 // Ad_pose is 6*6 matrix that when applied to twist xi, returns Ad_pose(xi)
 // Experimental - unit tests of derivatives based on it do not check out yet
 Matrix7 Moses3::AdjointMap() const {
-/*
-  const Matrix3 R = R_.matrix();
-  const Vector3 t = t_.vector();
-  Matrix3 A = skewSymmetric(t) * R;
-  Matrix6 adj;
-  adj << R, Z3, A, R;
-  return adj;
-*/
   return this->Adj();  
 }
 
@@ -158,13 +147,16 @@ Matrix6 Moses3::dExpInv_exp(const Vector& xi) {
 void Moses3::print(const string& s) const {
   cout << s;
   cout << *this; //DOES *this WORK here ??? Defined in Sim3
-  //R_.print("R:\n");
-  //t_.print("t: ");
 }
 
 /* ************************************************************************* */
 bool Moses3::equals(const Moses3& pose, double tol) const {
-  return (Rot3(this->rotation_matrix())).equals(Rot3(pose.rotation_matrix()), tol) && (Point3(this->Sim3::translation())).equals(Point3(pose.Sim3::translation()), tol) && (fabs(this->scale() - pose.scale()) < tol) ;
+
+ const Matrix3 & Rself = this->rotationMatrix();  
+ const Matrix3 & Rpose = pose.rotationMatrix();  
+    
+
+  return (Rot3(Rself)).equals(Rot3(Rpose), tol) && (Point3(this->Sim3::translation())).equals(Point3(pose.Sim3::translation()), tol) && (fabs(this->scale() - pose.scale()) < tol) ;
 }
 
 /* ************************************************************************* */
@@ -176,25 +168,17 @@ Moses3 Moses3::Expmap(const Vector& xi) {
 /* **************REMOVE*********************************************************** */
 Vector7 Moses3::Logmap(const Moses3& p) {
 	Vector7 vec;
-	return  Sim3::log(Sim3(p.scso3(), p.Sim3::translation()));
+	return  Sim3::log(Sim3(p.rxso3(), p.Sim3::translation()));
 }
 
 
 /* btak remove************************************************************************* */
 Vector7  Moses3::Logmap7(const Moses3& p) {
 	Vector7 vec;
-	return  Sim3::log(Sim3(p.scso3(), p.Sim3::translation()));
+	return  Sim3::log(Sim3(p.rxso3(), p.Sim3::translation()));
 }
 
 
-/* ************************************************************************* 
-Moses3 Moses3::retractFirstOrder(const Vector& xi) const {
-  Vector3 omega(sub(xi, 0, 3));
-  Point3 v(sub(xi, 3, 6));
-  Rot3 R = R_.retract(omega); // R is done exactly
-  Point3 t = t_ + R_ * v; // First order t approximation
-  return Moses3(R, t);
-}*/
 
 /* ************************************************************************* */
 // Different versions of retract
@@ -210,8 +194,6 @@ Moses3 Moses3::retract(const Vector& xi, Moses3::CoordinatesMode mode) const {
 
   }*/
   else {
-    // Point3 t = t_.retract(v.vector()); // Incorrect version retracts t independently
-    // Point3 t = t_ + R_ * (v+Point3(omega).cross(v)/2); // Second order t approximation
     assert(false);
     exit(1);
   }
@@ -238,12 +220,11 @@ Matrix4 Moses3::matrix() const {
 /* ************************************************************************* */
 // Check scale man
 Moses3 Moses3::transform_to(const Moses3& pose) const {
-  //Rot3 cRv = R_ * Rot3(pose.R_.inverse());// Scale should not be lost here!! Using scso3.
 
 	const Point3 Tt(this->Sim3::translation());
 
 
-  ScSO3 cRv = (scso3_) * pose.scso3().inverse();// Scale should not be lost here!! Using scso3. So this has scale included.
+  RxSO3 cRv = (rxso3_) * pose.rxso3().inverse();// Scale should not be lost here!! Using scso3. So this has scale included.
   Point3 t = pose.transform_to(Tt); // But this has scale included too. WTF.
   return Moses3(cRv, t);
 }
@@ -252,7 +233,11 @@ Moses3 Moses3::transform_to(const Moses3& pose) const {
 Point3 Moses3::transform_from(const Point3& p, boost::optional<Matrix&> Dpose,
     boost::optional<Matrix&> Dpoint) const {
   
-	const Rot3 Rr(this->Sim3::rotation_matrix());
+
+
+    const Matrix3 & Rself = this->rotationMatrix();  
+	const Rot3 Rr(Rself);
+
 	const double Ss(this->Sim3::scale());
 	const Point3 Tt(this->Sim3::translation());
 
@@ -275,7 +260,8 @@ Point3 Moses3::transform_from(const Point3& p, boost::optional<Matrix&> Dpose,
 Point3 Moses3::transform_to(const Point3& p, boost::optional<Matrix&> Dpose,
     boost::optional<Matrix&> Dpoint) const {
 
-	const Rot3 Rr(this->Sim3::rotation_matrix());
+    const Matrix3 & Rself = this->rotationMatrix();  
+	const Rot3 Rr(Rself);
 	const double Ss(this->Sim3::scale());
 	const Point3 Tt(this->Sim3::translation());
 
@@ -310,7 +296,6 @@ Moses3 Moses3::compose(const Moses3& p2, boost::optional<Matrix&> H1,
 Moses3 Moses3::inverse(boost::optional<Matrix&> H1) const {
   if (H1)
     *H1 = -AdjointMap(); // TODO Replace with correct function here
-  Rot3 Rt = R_.inverse();
   Moses3 inv(this->Sim3::inverse());
   return inv;
 }
@@ -349,7 +334,7 @@ double Moses3::range(const Moses3& point, boost::optional<Matrix&> H1,
     boost::optional<Matrix&> H2) const {
   double r = range(Point3(point.Sim3::translation()), H1, H2); //IMPORTANT!!! Should it be just translation or scaled translation ?? Scaled translation spoils derivatives.
   if (H2) {
-    Matrix H2_ = *H2 * point.scso3().matrix(); //Checked via numerical derivatives
+    Matrix H2_ = *H2 * point.rxso3().matrix(); //Checked via numerical derivatives
     *H2 = zeros(1, 7);
     insertSub(*H2, H2_, 0, 0);
   }
@@ -399,7 +384,12 @@ boost::optional<Moses3> align(const vector<Point3Pair>& pairs) {
 */
 /* ************************************************************************* */
 std::ostream &operator<<(std::ostream &os, const Moses3& pose) {
-  os << pose.Sim3::scso3() << "\n" << Point3(pose.Sim3::translation()) << endl;
+
+
+  const Matrix3 & Rself = pose.rotationMatrix();  
+  Rot3 rots(Rself);
+
+  os << rots << "\n" << pose.scale() << "\n" << Point3(pose.translation()) << endl;
   return os;
 }
 
