@@ -103,7 +103,16 @@ if(MSVC)
 	endif()
 endif()
 
-find_package(Boost 1.43 COMPONENTS serialization system filesystem thread program_options date_time regex timer chrono)
+
+set(BOOST_ROOT "/usr/")
+set(BOOST_INCLUDEDIR "/usr/include/")
+set(BOOST_LIBRARYDIR "/usr/lib/x86_64-linux-gnu/")
+#set(Boost_NO_SYSTEM_PATHS ON)
+
+find_package(Boost 1.54 COMPONENTS serialization system filesystem thread program_options date_time regex timer chrono)
+
+
+message(status "${Boost_SERIALIZATION_LIBRARY}")
 
 # Required components
 if(NOT Boost_SERIALIZATION_LIBRARY OR NOT Boost_SYSTEM_LIBRARY OR NOT Boost_FILESYSTEM_LIBRARY OR

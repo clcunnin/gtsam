@@ -100,6 +100,11 @@ public:
       Sim3(RxSO3(R.matrix()),t.vector()) {
   }
 
+/** Construct from R,t, and scale */
+  Moses3(const double scale, const Rot3& R, const Point3& t) :
+      Sim3(RxSO3(scale,R.matrix()),t.vector()) {
+  }
+
 
 
   /** Construct from Pose2 */
@@ -430,8 +435,18 @@ public:
     void serialize(Archive & ar, const unsigned int version) {
       ar & boost::serialization::make_nvp("Moses3",
               boost::serialization::base_object<Value>(*this));
-      ar & BOOST_SERIALIZATION_NVP(Rot3(this->rotation_matrix()));
-      ar & BOOST_SERIALIZATION_NVP(Point3(translation_));//add scale
+
+
+      const Matrix3 & Rself = this->rotationMatrix();  
+	  Rot3 Rr(Rself);
+      ar & BOOST_SERIALIZATION_NVP(Rr);
+      
+      double tmpscale = this->scale;
+      ar & BOOST_SERIALIZATION_NVP(tmpscale);//add scale
+
+      Point3 trans(translation_);
+
+      ar & BOOST_SERIALIZATION_NVP(trans);//add scale
     }
     /// @}
 

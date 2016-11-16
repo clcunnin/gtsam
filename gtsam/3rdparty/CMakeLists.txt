@@ -3,12 +3,9 @@ install(FILES CCOLAMD/Include/ccolamd.h DESTINATION include/gtsam/3rdparty/CCOLA
 install(FILES UFconfig/UFconfig.h DESTINATION include/gtsam/3rdparty/UFconfig)
 
 
-message(STATUS "HERE!!!!!!!!!!!!!!!!11") 
-
 
 if(NOT GTSAM_USE_SYSTEM_EIGEN)
 	# Find plain .h files
-    message(STATUS "NOT USING SYSTEM!!!!!!!!!!!!!!!!11") 
 	file(GLOB_RECURSE eigen_headers "${CMAKE_CURRENT_SOURCE_DIR}/Eigen/Eigen/*.h")
 
     #message(STATUS ${eigen_headers}) 
